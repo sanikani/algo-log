@@ -5,12 +5,15 @@ import org.junit.jupiter.api.Test;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.member.entity.Provider;
 import org.sani.algolog.domain.member.entity.Role;
+import org.sani.algolog.global.config.JpaConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest // 1. JPA 관련 설정만 로드하여 가볍게 테스트 (H2 DB 자동 사용)
+@DataJpaTest
+@Import(JpaConfig.class)
 class MemberRepositoryTest {
 
     @Autowired
