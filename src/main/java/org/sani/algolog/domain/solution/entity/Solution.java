@@ -40,4 +40,11 @@ public class Solution extends BaseEntity {
         this.problemId = problemId;
         this.member = member;
     }
+
+    public void update(String code, Integer timeElapsed, boolean isSolved, Long problemId) {
+        this.code = code;
+        this.timeElapsed = timeElapsed;
+        this.isSolved = isSolved;
+        this.problemId = problemId;
+    }
 }
