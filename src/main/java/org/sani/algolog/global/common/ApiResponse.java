@@ -37,4 +37,12 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(ErrorCode errorCode, String message) {
         return new ApiResponse<>(errorCode.getStatus(), errorCode.getCode(), message, null);
     }
+
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode, T data) {
+        return new ApiResponse<>(errorCode.getStatus(), errorCode.getCode(), errorCode.getMessage(), data);
+    }
+
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode, String message, T data) {
+        return new ApiResponse<>(errorCode.getStatus(), errorCode.getCode(), message, data);
+    }
 }
