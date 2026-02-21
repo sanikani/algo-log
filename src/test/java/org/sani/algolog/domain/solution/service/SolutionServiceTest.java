@@ -23,7 +23,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SolutionServiceTest {
@@ -38,7 +40,7 @@ class SolutionServiceTest {
     private SolutionService solutionService;
 
     @Test
-    @DisplayName("풀이 등록 성공")
+    @DisplayName("save solution succeeds")
     void saveSolution() {
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
@@ -75,7 +77,7 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("풀이 수정 성공")
+    @DisplayName("update solution succeeds")
     void updateSolution() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
@@ -103,7 +105,7 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("작성자가 아닌 경우 수정 실패")
+    @DisplayName("update is denied for non-owner")
     void updateSolutionAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
@@ -125,7 +127,7 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("풀이 삭제 성공")
+    @DisplayName("delete solution succeeds")
     void deleteSolution() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
@@ -146,7 +148,7 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("작성자가 아닌 경우 삭제 실패")
+    @DisplayName("delete is denied for non-owner")
     void deleteSolutionAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
@@ -166,7 +168,7 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("회원 ID로 풀이 목록 조회 성공")
+    @DisplayName("get member solutions succeeds")
     void getSolutionsByMember() {
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(3L);
@@ -180,7 +182,8 @@ class SolutionServiceTest {
                 .build();
         ReflectionTestUtils.setField(solution, "id", 99L);
 
-        when(solutionRepository.findAllByMemberId(3L)).thenReturn(List.of(solution));
+        when(memberRepository.findById(3L)).thenReturn(Optional.of(member));
+        when(solutionRepository.findAllByMemberIdOrderByCreatedAtDesc(3L)).thenReturn(List.of(solution));
 
         List<SolutionResponse> responses = solutionService.getSolutionsByMember(3L);
 
@@ -190,7 +193,60 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("풀이 ID가 없으면 예외")
+    @DisplayName("get member solutions raises not found when member does not exist")
+    void getSolutionsByMemberNotFound() {
+        when(memberRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> solutionService.getSolutionsByMember(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("get solution detail succeeds for owner")
+    void getSolutionById() {
+        Member owner = mock(Member.class);
+        when(owner.getId()).thenReturn(1L);
+
+        Solution solution = Solution.builder()
+                .code("code")
+                .timeElapsed(10)
+                .isSolved(true)
+                .problemId(2L)
+                .member(owner)
+                .build();
+        ReflectionTestUtils.setField(solution, "id", 7L);
+
+        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+
+        SolutionResponse response = solutionService.getSolution(7L, 1L);
+
+        assertThat(response.getId()).isEqualTo(7L);
+        assertThat(response.getMemberId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("get solution detail is denied for non-owner")
+    void getSolutionByIdAccessDenied() {
+        Member owner = mock(Member.class);
+        when(owner.getId()).thenReturn(1L);
+
+        Solution solution = Solution.builder()
+                .code("code")
+                .timeElapsed(10)
+                .isSolved(true)
+                .problemId(2L)
+                .member(owner)
+                .build();
+        ReflectionTestUtils.setField(solution, "id", 7L);
+
+        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+
+        assertThatThrownBy(() -> solutionService.getSolution(7L, 99L))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("missing solution raises not found")
     void findSolutionNotFound() {
         when(solutionRepository.findById(1L)).thenReturn(Optional.empty());
 
