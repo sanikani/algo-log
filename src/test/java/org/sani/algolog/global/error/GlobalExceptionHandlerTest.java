@@ -94,4 +94,22 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"));
     }
 
+    @Test
+    @DisplayName("entity not found exception returns NOT_FOUND")
+    void handleEntityNotFoundException() throws Exception {
+        mockMvc.perform(get("/test/jpa-not-found"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("access denied exception returns FORBIDDEN")
+    void handleAccessDeniedException() throws Exception {
+        mockMvc.perform(get("/test/forbidden"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
 }

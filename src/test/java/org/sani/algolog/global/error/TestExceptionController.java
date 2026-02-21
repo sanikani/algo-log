@@ -1,8 +1,10 @@
 package org.sani.algolog.global.error;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.sani.algolog.global.error.exception.NotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,6 +41,16 @@ public class TestExceptionController {
     @GetMapping("/unexpected")
     public String unexpected() {
         throw new IllegalStateException("boom");
+    }
+
+    @GetMapping("/jpa-not-found")
+    public String jpaNotFound() {
+        throw new EntityNotFoundException("Entity does not exist.");
+    }
+
+    @GetMapping("/forbidden")
+    public String forbidden() {
+        throw new AccessDeniedException("Access is denied.");
     }
 
     public record TestRequest(
