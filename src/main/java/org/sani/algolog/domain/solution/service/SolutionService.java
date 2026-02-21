@@ -54,9 +54,16 @@ public class SolutionService {
     }
 
     public List<SolutionResponse> getSolutionsByMember(Long memberId) {
-        return solutionRepository.findAllByMemberId(memberId).stream()
+        findMember(memberId);
+        return solutionRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId).stream()
                 .map(SolutionResponse::from)
                 .toList();
+    }
+
+    public SolutionResponse getSolution(Long solutionId, Long memberId) {
+        Solution solution = findSolution(solutionId);
+        validateOwner(solution, memberId);
+        return SolutionResponse.from(solution);
     }
 
     private Solution findSolution(Long solutionId) {
