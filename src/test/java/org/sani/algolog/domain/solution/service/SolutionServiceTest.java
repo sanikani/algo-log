@@ -193,6 +193,15 @@ class SolutionServiceTest {
     }
 
     @Test
+    @DisplayName("get member solutions raises not found when member does not exist")
+    void getSolutionsByMemberNotFound() {
+        when(memberRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> solutionService.getSolutionsByMember(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
     @DisplayName("get solution detail succeeds for owner")
     void getSolutionById() {
         Member owner = mock(Member.class);
