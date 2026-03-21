@@ -66,8 +66,9 @@ public class SolutionService {
     }
 
     public SolutionResponse getSolution(Long solutionId, Long memberId) {
-        Solution solution = findSolution(solutionId);
-        validateOwner(solution, memberId);
+        findMember(memberId);
+        Solution solution = solutionRepository.findByIdAndMemberId(solutionId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Solution not found: " + solutionId));
         return SolutionResponse.from(solution);
     }
 
