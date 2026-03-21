@@ -70,8 +70,8 @@ class SolutionRepositoryTest {
     }
 
     @Test
-    @DisplayName("회원 ID로 풀이 목록 조회 성공")
-    void findAllByMemberId() {
+    @DisplayName("회원 ID로 풀이 목록을 최신순으로 조회하면서 문제 연관관계를 함께 가져온다")
+    void findAllByMemberIdOrderByCreatedAtDesc() {
         // given
         Member member = memberRepository.save(Member.builder()
                 .email("list@test.com")
@@ -87,7 +87,15 @@ class SolutionRepositoryTest {
                 .difficulty("Bronze V")
                 .build());
 
-        solutionRepository.save(Solution.builder()
+        Problem newerProblem = problemRepository.save(Problem.builder()
+                .platform(Platform.BOJ)
+                .externalProblemId("1002")
+                .title("A/B")
+                .problemUrl("https://www.acmicpc.net/problem/1002")
+                .difficulty("Bronze IV")
+                .build());
+
+        Solution firstSolution = solutionRepository.save(Solution.builder()
                 .code("class Solution { }")
                 .timeElapsed(300)
                 .isSolved(true)
@@ -96,11 +104,57 @@ class SolutionRepositoryTest {
                 .member(member)
                 .build());
 
+        Solution secondSolution = solutionRepository.save(Solution.builder()
+                .code("class AnotherSolution { }")
+                .timeElapsed(150)
+                .isSolved(true)
+                .memoMarkdown("사칙연산 풀이")
+                .problem(newerProblem)
+                .member(member)
+                .build());
+
         // when
-        List<Solution> solutions = solutionRepository.findAllByMemberId(member.getId());
+        List<Solution> solutions = solutionRepository.findAllByMemberIdOrderByCreatedAtDesc(member.getId());
 
         // then
-        assertThat(solutions).hasSize(1);
-        assertThat(solutions.get(0).getProblem().getExternalProblemId()).isEqualTo("1001");
+        assertThat(solutions).hasSize(2);
+        assertThat(solutions.get(0).getId()).isEqualTo(secondSolution.getId());
+        assertThat(solutions.get(1).getId()).isEqualTo(firstSolution.getId());
+        assertThat(solutions.get(0).getProblem().getExternalProblemId()).isEqualTo("1002");
+        assertThat(solutions.get(1).getProblem().getExternalProblemId()).isEqualTo("1001");
+    }
+
+    @Test
+    @DisplayName("풀이 ID와 회원 ID로 상세 조회하면서 문제 연관관계를 함께 가져온다")
+    void findByIdAndMemberId() {
+        Member member = memberRepository.save(Member.builder()
+                .email("detail@test.com")
+                .nickname("상세조회")
+                .provider(Provider.GITHUB)
+                .role(Role.USER)
+                .build());
+        Problem problem = problemRepository.save(Problem.builder()
+                .platform(Platform.BOJ)
+                .externalProblemId("2557")
+                .title("Hello World")
+                .problemUrl("https://www.acmicpc.net/problem/2557")
+                .difficulty("Bronze V")
+                .build());
+
+        Solution solution = solutionRepository.save(Solution.builder()
+                .code("public class Main {}")
+                .timeElapsed(10)
+                .isSolved(true)
+                .memoMarkdown("기본 출력 문제")
+                .problem(problem)
+                .member(member)
+                .build());
+
+        Solution found = solutionRepository.findByIdAndMemberId(solution.getId(), member.getId())
+                .orElseThrow(() -> new IllegalArgumentException("풀이가 없습니다."));
+
+        assertThat(found.getId()).isEqualTo(solution.getId());
+        assertThat(found.getProblem().getTitle()).isEqualTo("Hello World");
+        assertThat(found.getProblem().getExternalProblemId()).isEqualTo("2557");
     }
 }
