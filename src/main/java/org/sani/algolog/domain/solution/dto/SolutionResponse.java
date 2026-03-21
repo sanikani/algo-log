@@ -25,7 +25,7 @@ public class SolutionResponse {
                 .code(solution.getCode())
                 .timeElapsed(solution.getTimeElapsed())
                 .solved(solution.isSolved())
-                .problemId(solution.getProblemId())
+                .problemId(solution.getProblem().getId())
                 .memberId(solution.getMember().getId())
                 .createdAt(solution.getCreatedAt())
                 .updatedAt(solution.getUpdatedAt())
