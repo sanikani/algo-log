@@ -1,143 +1,175 @@
-# 🚀 Project: AlgoLog (알고로그)
+# AlgoLog
 
-> 단순 풀이 기록을 넘어, 개발자의 성장을 돕는 AI 기반 알고리즘 오답노트 플랫폼
->
+> 알고리즘 풀이 코드와 회고를 함께 기록하는 백엔드 API
 
-## 1. 프로젝트 개요 (Overview)
+## 1. 프로젝트 개요
 
-### 📅 개발 기간
+- 기간: 2026.02.01 ~ 진행 중
+- 현재 상태: MVP 개발 중
+- 목표: 문제 메타데이터, 풀이 코드, 회고를 한 번에 저장하고 조회할 수 있는 기록 API 구축
 
-- **기간:** 2026.02.01 ~ (진행 중)
-- **상태:** `기획 단계` → `MVP 개발`
+현재 구현은 "수동 풀이 기록"에 집중되어 있습니다. Chrome Extension, OAuth/JWT, 대시보드, AI 피드백은 아직 구현되지 않았고 후속 범위로 관리합니다.
 
-### 🎯 기획 배경 (Why?)
+## 2. 현재 구현 범위
 
-기존의 알고리즘 풀이 사이트(백준, 프로그래머스)와 관리 도구들은 기능이 파편화되어 있음.
+### 도메인
 
-1. **BaekjoonHub:** 자동 커밋은 되지만, '회고'와 '학습 내용'을 체계적으로 정리하기 어려움.
-2. **Notion/Blog:** 정리는 잘 되지만, 매번 문제 정보를 복사/붙여넣기 하는 과정이 번거로워 지속성이 떨어짐.
-3. **Solved.ac:** 티어와 잔디는 보여주지만, 구체적인 코드 개선점(Code Review)은 제공하지 않음.
+- `Member`
+  - 사용자 엔티티 및 저장소
+- `Problem`
+  - 플랫폼, 외부 문제 ID, 제목, 문제 URL, 난이도 저장
+  - `(platform, externalProblemId)` 기준 중복 방지
+- `Solution`
+  - 문제 풀이 코드, 풀이 시간, 성공 여부, Markdown 회고 저장
+  - `Member`, `Problem`과 연관관계로 연결
 
-👉 **자동화된 수집(Extension)**과 **AI 기반의 피드백**을 결합하여, **지속 가능한 성장 시스템**을 만들고자 함.
+### API
 
-### 👥 타겟 사용자
+현재 공개된 API는 `SolutionController` 기준으로 다음과 같습니다.
 
-- 코딩테스트를 준비하며 자신의 약점을 체계적으로 관리하고 싶은 **취업 준비생**
-- 단순 문제 풀이를 넘어 클린 코드와 성능 최적화를 고민하는 **주니어 개발자**
+- `POST /api/v1/solutions`
+  - 문제 메타데이터와 풀이를 함께 저장
+- `GET /api/v1/solutions`
+  - 내 풀이 목록 조회
+- `GET /api/v1/solutions/{id}`
+  - 내 풀이 상세 조회
+- `PUT /api/v1/solutions/{id}`
+  - 내 풀이 수정
+- `DELETE /api/v1/solutions/{id}`
+  - 내 풀이 삭제
 
----
+모든 API는 현재 임시 방식으로 `X-Member-Id` 헤더를 사용해 사용자를 식별합니다.
 
-## 2. 핵심 기능 (Key Features)
+### 공통 처리
 
-### 🔹 Phase 1: MVP (기초 다지기)
+- 공통 응답 래퍼: `ApiResponse`
+- 공통 예외 처리: `GlobalExceptionHandler`
+- API 문서화: Swagger / SpringDoc
+- 테스트: JUnit 5, Mockito, Spring WebMvcTest, JPA 테스트
 
-- **사용자 관리:** GitHub OAuth 2.0 소셜 로그인.
-- **문제 기록 (Manual):** 문제 링크, 제목, 코드, 난이도, 풀이 상태(성공/실패) 수동 저장.
-- **마크다운 회고:** 코드 하이라이팅 및 학습 내용(Markdown) 정리 기능.
-- **학습 대시보드:**
-    - 일일 학습 잔디(Heatmap) 시각화.
-    - 플랫폼별/난이도별 풀이 통계 차트.
+## 3. 기술 스택
 
-### 🔹 Phase 2: 확장 (자동화 & 연결)
+### Backend
 
-- **Chrome Extension 연동:**
-    - 백준/프로그래머스 '제출 성공' 시 버튼 하나로 문제 정보 & 코드 자동 전송.
-    - CORS 이슈 해결 및 JWT 기반 인증 통신.
-- **검색 및 필터:**
-    - 동적 쿼리를 활용한 상세 조건 검색 (예: "골드 난이도 중 DP 문제만").
+- Java 21
+- Spring Boot 3.x
+- Spring Data JPA
+- MySQL 8.0
+- SpringDoc OpenAPI
+- JUnit 5, Mockito
 
-### 🔹 Phase 3: 고도화 (AI & 최적화)
+### 준비 중인 기술
 
-- **AI 코드 피드백 (Spring AI):**
-    - 제출된 코드의 시간/공간 복잡도 분석.
-    - 개선된 코드 제안 및 리팩토링 팁 제공.
-- **면접관 모드:** "이 코드에 대해 면접관이 질문할 법한 예상 질문 3가지" 생성.
-- **복습 알림 시스템:** 망각 곡선 이론에 따른 주기적 복습 알림 (Batch).
+- MyBatis
+  - `query` 패키지 골격만 존재하며 실제 조회 기능은 아직 없음
+- Spring Security / OAuth / JWT
+  - `security` 패키지 골격만 존재하며 인증 흐름은 아직 없음
 
----
+## 4. 현재 아키텍처
 
-## 3. 기술 스택 (Tech Stack)
+현재 구현은 JPA 중심의 단순한 CRUD 구조입니다.
 
-### 🛠 Backend
+1. 클라이언트가 `SolutionController`로 요청 전송
+2. `SolutionService`가 회원 조회, 문제 생성 또는 재사용, 풀이 저장/수정/삭제 처리
+3. `ProblemRepository`, `SolutionRepository`, `MemberRepository`가 DB 접근 담당
+4. `GlobalExceptionHandler`가 공통 오류 응답 처리
 
-- **Language:** Java 21
-- **Framework:** Spring Boot 3.x
-- **Database:**
-    - **Main:** Spring Data JPA (도메인 로직, CUD 작업)
-    - **Query/Stat:** MyBatis (복잡한 통계 조회, Bulk 연산 최적화)
-    - **DB:** MySQL 8.0
-- **API Doc:** Swagger (SpringDoc)
-- **Test:** JUnit5, Mockito
+아직 구현되지 않은 항목:
 
-### 💻 Frontend (Client)
+- `QueryService`
+- 대시보드용 통계 조회
+- Extension 연동
+- OAuth/JWT 인증
+- AI 피드백 생성
 
-- **Web:** Vue.js
-- **Extension:** HTML/CSS/JS
+## 5. 데이터 모델
 
-### ☁️ Infrastructure & Tools
+### Member
 
-- **Server:** AWS EC2 (Free Tier)
-- **CI/CD:** GitHub Actions
-- **Cooperation:** Git, Notion, Discord
+- 소셜 로그인 제공자, 이메일, 닉네임, 권한 정보를 보관하는 사용자 엔티티
 
----
+### Problem
 
-## 4. 시스템 아키텍처 (Architecture)
+- `platform`
+- `externalProblemId`
+- `title`
+- `problemUrl`
+- `difficulty`
 
-1. **Client (Chrome Extension):** DOM 파싱 → API 서버로 JSON 전송.
-2. **Server (Spring Boot):**
-    - `SolutionController`에서 요청 접수.
-    - `CommandService`(JPA)가 데이터 검증 및 저장.
-    - `QueryService`(MyBatis)가 대시보드용 통계 데이터 조회.
-3. **Database:** `Member` - `Solution` - `Problem` 구조로 정규화된 설계.
+동일한 문제는 `(platform, externalProblemId)`로 식별합니다.
 
----
+### Solution
 
-## 5. 데이터베이스 설계 (ERD)
+- `code`
+- `timeElapsed`
+- `solved`
+- `memoMarkdown`
+- `member`
+- `problem`
 
-![image.png](attachment:486e2e6b-75e2-45fe-b7f4-aa7dffc69d34:image.png)
+풀이 수정은 `Solution` 내용만 대상으로 하고, 문제 메타데이터는 생성 시점 기준으로 재사용합니다.
 
-- **Members:** 사용자 정보 및 소셜 로그인 연동.
-- **Problems:** 문제 메타 데이터 (중복 방지).
-- **Solutions:** 사용자의 풀이 코드, 회고, AI 피드백 저장.
+## 6. 요청 예시
 
----
+### 풀이 저장
 
-## 6. 개발 일정 (Roadmap)
+```json
+{
+  "code": "public class Main {}",
+  "timeElapsed": 123,
+  "solved": true,
+  "memoMarkdown": "## 회고\n- 점화식을 다시 정리해야 한다.",
+  "problem": {
+    "platform": "BOJ",
+    "externalProblemId": "1000",
+    "title": "A+B",
+    "problemUrl": "https://www.acmicpc.net/problem/1000",
+    "difficulty": "Bronze V"
+  }
+}
+```
 
-### ✅ 프로젝트 세팅 & 백엔드 코어
+요청 헤더:
 
-- [ ]  Spring Boot 프로젝트 생성 및 의존성 설정 (JPA + MyBatis)
-- [ ]  GitHub Repository 연동 및 Git Flow 전략 수립
-- [ ]  DB 설계 (ERD) 및 Entity/Mapper 구현
-- [ ]  문제 저장/조회 기본 API (CRUD) 구현 및 테스트
+```http
+X-Member-Id: 1
+```
 
-### ✅데이터 수집 & 프론트엔드
+## 7. 진행 현황
 
-- [ ]  Chrome Extension 개발 (DOM 파싱 및 서버 전송)
-- [ ]  CORS 설정 및 JWT 인증 연동
-- [ ]  기본 UI (목록, 상세, 작성 페이지) 구현
+### 완료
 
-### ✅ 시각화 & AI 도입
+- [x] Spring Boot 프로젝트 기본 설정
+- [x] 공통 응답/공통 예외 처리
+- [x] `Member`, `Problem`, `Solution` 엔티티 및 저장소 구현
+- [x] 문제 메타데이터를 포함한 풀이 저장 API 구현
+- [x] 풀이 목록/상세 조회 API 구현
+- [x] 풀이 수정/삭제 API 구현
+- [x] Swagger 설정
+- [x] 컨트롤러/서비스/리포지토리 테스트 추가
 
-- [ ]  대시보드 잔디(Heatmap) 구현 (MyBatis 집계 쿼리 활용)
-- [ ]  Spring AI 연동 및 프롬프트 엔지니어링 테스트
-- [ ]  배포 (AWS EC2) 및 시연 영상 제작
+### 진행 예정
 
----
+- [ ] 임시 `X-Member-Id` 인증 구조 정리
+- [ ] OAuth/JWT 인증 도입
+- [ ] MyBatis 기반 조회/통계 기능 추가
+- [ ] 대시보드 API 설계
+- [ ] Chrome Extension 연동
+- [ ] AI 기반 코드 피드백 기능
 
-## 7. 컨벤션 (Ground Rules)
+## 8. 브랜치 및 커밋 컨벤션
 
-### 📌 Commit Message
-
-- `feat`: 새로운 기능 추가
-- `fix`: 버그 수정
-- `refactor`: 코드 리팩토링 (기능 변경 없음)
-- `docs`: 문서 수정
-- `chore`: 빌드 설정, 패키지 매니저 설정 등
-
-### 📌 Branch Strategy
+### 브랜치 전략
 
 - `main`: 배포 가능한 안정 버전
-- `develop`: 개발 중인 버전
-- `feature/기능명`: 단위 기능 개발 브랜치
+- `develop`: 통합 개발 브랜치
+- `feature/#이슈번호-기능명`: 기능 개발 브랜치
+
+### 커밋 메시지
+
+- `feat`: 기능 추가
+- `fix`: 버그 수정
+- `refactor`: 구조 개선
+- `docs`: 문서 수정
+- `test`: 테스트 추가/수정
+- `chore`: 설정 및 기타 작업
