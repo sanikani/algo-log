@@ -253,7 +253,8 @@ class SolutionServiceTest {
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
 
-        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(solutionRepository.findByIdAndMemberId(7L, 1L)).thenReturn(Optional.of(solution));
 
         SolutionResponse response = solutionService.getSolution(7L, 1L);
 
@@ -263,10 +264,9 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("get solution detail is denied for non-owner")
+    @DisplayName("get solution detail raises not found for non-owner")
     void getSolutionByIdAccessDenied() {
         Member owner = mock(Member.class);
-        when(owner.getId()).thenReturn(1L);
         Problem problem = problem(2L);
 
         Solution solution = Solution.builder()
@@ -279,10 +279,11 @@ class SolutionServiceTest {
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
 
-        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+        when(memberRepository.findById(99L)).thenReturn(Optional.of(owner));
+        when(solutionRepository.findByIdAndMemberId(7L, 99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> solutionService.getSolution(7L, 99L))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test

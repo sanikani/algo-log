@@ -27,7 +27,7 @@ public class Solution extends BaseEntity {
     private boolean isSolved;
 
     @Lob
-    @Column(nullable = false)
+    @Column
     private String memoMarkdown;
 
     @ManyToOne(fetch = FetchType.LAZY)

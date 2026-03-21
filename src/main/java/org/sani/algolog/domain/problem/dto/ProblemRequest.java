@@ -2,6 +2,7 @@ package org.sani.algolog.domain.problem.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,15 +18,19 @@ public class ProblemRequest {
     private Platform platform;
 
     @NotBlank
+    @Size(max = 100)
     private String externalProblemId;
 
     @NotBlank
+    @Size(max = 255)
     private String title;
 
     @NotBlank
+    @Size(max = 500)
     private String problemUrl;
 
     @NotBlank
+    @Size(max = 50)
     private String difficulty;
 
     public Problem toEntity() {
