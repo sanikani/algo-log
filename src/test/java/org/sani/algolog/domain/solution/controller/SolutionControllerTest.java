@@ -7,6 +7,7 @@ import org.sani.algolog.domain.problem.dto.ProblemResponse;
 import org.sani.algolog.domain.problem.entity.Platform;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.service.SolutionService;
+import org.sani.algolog.global.config.WebConfig;
 import org.sani.algolog.global.error.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = SolutionController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, WebConfig.class})
 @AutoConfigureMockMvc(addFilters = false)
 class SolutionControllerTest {
 
