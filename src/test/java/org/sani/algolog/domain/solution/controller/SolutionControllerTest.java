@@ -3,6 +3,8 @@ package org.sani.algolog.domain.solution.controller;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.sani.algolog.domain.problem.dto.ProblemResponse;
+import org.sani.algolog.domain.problem.entity.Platform;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.service.SolutionService;
 import org.sani.algolog.global.error.GlobalExceptionHandler;
@@ -51,7 +53,14 @@ class SolutionControllerTest {
                   "code": "public class Main {}",
                   "timeElapsed": 123,
                   "solved": true,
-                  "problemId": 10
+                  "memoMarkdown": "## 회고\\n- DP 점화식을 다시 복습해야 한다.",
+                  "problem": {
+                    "platform": "BOJ",
+                    "externalProblemId": "1000",
+                    "title": "A+B",
+                    "problemUrl": "https://www.acmicpc.net/problem/1000",
+                    "difficulty": "Bronze V"
+                  }
                 }
                 """;
 
@@ -64,7 +73,9 @@ class SolutionControllerTest {
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.id").value(100))
                 .andExpect(jsonPath("$.data.memberId").value(1))
-                .andExpect(jsonPath("$.data.problemId").value(10));
+                .andExpect(jsonPath("$.data.problem.id").value(10))
+                .andExpect(jsonPath("$.data.problem.platform").value("BOJ"))
+                .andExpect(jsonPath("$.data.memoMarkdown").value("회고"));
     }
 
     @Test
@@ -74,7 +85,11 @@ class SolutionControllerTest {
                 {
                   "code": "",
                   "timeElapsed": -1,
-                  "solved": null
+                  "solved": null,
+                  "memoMarkdown": "",
+                  "problem": {
+                    "title": ""
+                  }
                 }
                 """;
 
@@ -114,7 +129,8 @@ class SolutionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.id").value(100));
+                .andExpect(jsonPath("$.data.id").value(100))
+                .andExpect(jsonPath("$.data.problem.title").value("A+B"));
     }
 
     @Test
@@ -159,7 +175,15 @@ class SolutionControllerTest {
                 .code("public class Main {}")
                 .timeElapsed(120)
                 .solved(true)
-                .problemId(problemId)
+                .memoMarkdown("회고")
+                .problem(ProblemResponse.builder()
+                        .id(problemId)
+                        .platform(Platform.BOJ)
+                        .externalProblemId("1000")
+                        .title("A+B")
+                        .problemUrl("https://www.acmicpc.net/problem/1000")
+                        .difficulty("Bronze V")
+                        .build())
                 .memberId(memberId)
                 .createdAt(now)
                 .updatedAt(now)

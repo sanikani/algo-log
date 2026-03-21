@@ -54,6 +54,7 @@ class SolutionRepositoryTest {
                 .code("public class Solution { }")
                 .timeElapsed(120)
                 .isSolved(true)
+                .memoMarkdown("기본 입출력 회고")
                 .problem(problem)
                 .member(member)
                 .build();
@@ -90,6 +91,7 @@ class SolutionRepositoryTest {
                 .code("class Solution { }")
                 .timeElapsed(300)
                 .isSolved(true)
+                .memoMarkdown("입출력 풀이")
                 .problem(problem)
                 .member(member)
                 .build());

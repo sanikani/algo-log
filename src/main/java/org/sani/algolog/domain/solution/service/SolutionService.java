@@ -5,9 +5,10 @@ import lombok.RequiredArgsConstructor;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.member.repository.MemberRepository;
 import org.sani.algolog.domain.problem.entity.Problem;
-import org.sani.algolog.domain.problem.repository.ProblemRepository;
-import org.sani.algolog.domain.solution.dto.SolutionRequest;
+import org.sani.algolog.domain.problem.service.ProblemService;
+import org.sani.algolog.domain.solution.dto.SolutionCreateRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
+import org.sani.algolog.domain.solution.dto.SolutionUpdateRequest;
 import org.sani.algolog.domain.solution.entity.Solution;
 import org.sani.algolog.domain.solution.repository.SolutionRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,12 +24,12 @@ public class SolutionService {
 
     private final SolutionRepository solutionRepository;
     private final MemberRepository memberRepository;
-    private final ProblemRepository problemRepository;
+    private final ProblemService problemService;
 
     @Transactional
-    public SolutionResponse save(SolutionRequest request, Long memberId) {
+    public SolutionResponse save(SolutionCreateRequest request, Long memberId) {
         Member member = findMember(memberId);
-        Problem problem = findProblem(request.getProblemId());
+        Problem problem = problemService.getOrCreate(request.getProblem());
         Solution solution = request.toEntity(member, problem);
 
         Solution savedSolution = solutionRepository.save(solution);
@@ -36,16 +37,15 @@ public class SolutionService {
     }
 
     @Transactional
-    public SolutionResponse update(Long solutionId, SolutionRequest request, Long memberId) {
+    public SolutionResponse update(Long solutionId, SolutionUpdateRequest request, Long memberId) {
         Solution solution = findSolution(solutionId);
         validateOwner(solution, memberId);
-        Problem problem = findProblem(request.getProblemId());
 
         solution.update(
                 request.getCode(),
                 request.getTimeElapsed(),
                 request.getSolved(),
-                problem
+                request.getMemoMarkdown()
         );
 
         return SolutionResponse.from(solution);
@@ -66,8 +66,9 @@ public class SolutionService {
     }
 
     public SolutionResponse getSolution(Long solutionId, Long memberId) {
-        Solution solution = findSolution(solutionId);
-        validateOwner(solution, memberId);
+        findMember(memberId);
+        Solution solution = solutionRepository.findByIdAndMemberId(solutionId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Solution not found: " + solutionId));
         return SolutionResponse.from(solution);
     }
 
@@ -79,11 +80,6 @@ public class SolutionService {
     private Member findMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found: " + memberId));
-    }
-
-    private Problem findProblem(Long problemId) {
-        return problemRepository.findById(problemId)
-                .orElseThrow(() -> new EntityNotFoundException("Problem not found: " + problemId));
     }
 
     private void validateOwner(Solution solution, Long memberId) {

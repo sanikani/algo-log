@@ -10,11 +10,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.member.repository.MemberRepository;
+import org.sani.algolog.domain.problem.dto.ProblemRequest;
 import org.sani.algolog.domain.problem.entity.Platform;
 import org.sani.algolog.domain.problem.entity.Problem;
-import org.sani.algolog.domain.problem.repository.ProblemRepository;
-import org.sani.algolog.domain.solution.dto.SolutionRequest;
+import org.sani.algolog.domain.problem.service.ProblemService;
+import org.sani.algolog.domain.solution.dto.SolutionCreateRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
+import org.sani.algolog.domain.solution.dto.SolutionUpdateRequest;
 import org.sani.algolog.domain.solution.entity.Solution;
 import org.sani.algolog.domain.solution.repository.SolutionRepository;
 import org.sani.algolog.global.error.exception.BadRequestException;
@@ -41,7 +43,7 @@ class SolutionServiceTest {
     private MemberRepository memberRepository;
 
     @Mock
-    private ProblemRepository problemRepository;
+    private ProblemService problemService;
 
     @InjectMocks
     private SolutionService solutionService;
@@ -53,19 +55,32 @@ class SolutionServiceTest {
         when(member.getId()).thenReturn(1L);
         Problem problem = problem(10L);
 
-        SolutionRequest request = new SolutionRequest("code", 120, true, 10L);
+        SolutionCreateRequest request = new SolutionCreateRequest(
+                "code",
+                120,
+                true,
+                "회고",
+                new ProblemRequest(
+                        Platform.BOJ,
+                        "1000",
+                        "A+B",
+                        "https://www.acmicpc.net/problem/1000",
+                        "Bronze V"
+                )
+        );
 
         Solution savedSolution = Solution.builder()
                 .code("code")
                 .timeElapsed(120)
                 .isSolved(true)
+                .memoMarkdown("회고")
                 .problem(problem)
                 .member(member)
                 .build();
         ReflectionTestUtils.setField(savedSolution, "id", 100L);
 
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-        when(problemRepository.findById(10L)).thenReturn(Optional.of(problem));
+        when(problemService.getOrCreate(request.getProblem())).thenReturn(problem);
         when(solutionRepository.save(any(Solution.class))).thenReturn(savedSolution);
 
         SolutionResponse response = solutionService.save(request, 1L);
@@ -76,11 +91,12 @@ class SolutionServiceTest {
         assertThat(captured.getCode()).isEqualTo(request.getCode());
         assertThat(captured.getTimeElapsed()).isEqualTo(request.getTimeElapsed());
         assertThat(captured.isSolved()).isEqualTo(request.getSolved());
+        assertThat(captured.getMemoMarkdown()).isEqualTo(request.getMemoMarkdown());
         assertThat(captured.getProblem()).isEqualTo(problem);
         assertThat(captured.getMember()).isEqualTo(member);
 
         assertThat(response.getId()).isEqualTo(100L);
-        assertThat(response.getProblemId()).isEqualTo(10L);
+        assertThat(response.getProblem().getId()).isEqualTo(10L);
         assertThat(response.isSolved()).isTrue();
         assertThat(response.getMemberId()).isEqualTo(1L);
     }
@@ -91,29 +107,29 @@ class SolutionServiceTest {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
         Problem currentProblem = problem(5L);
-        Problem newProblem = problem(7L);
 
         Solution solution = Solution.builder()
                 .code("old")
                 .timeElapsed(30)
                 .isSolved(false)
+                .memoMarkdown("old memo")
                 .problem(currentProblem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 1L);
 
         when(solutionRepository.findById(1L)).thenReturn(Optional.of(solution));
-        when(problemRepository.findById(7L)).thenReturn(Optional.of(newProblem));
 
-        SolutionRequest request = new SolutionRequest("new", 60, true, 7L);
+        SolutionUpdateRequest request = new SolutionUpdateRequest("new", 60, true, "new memo");
         SolutionResponse response = solutionService.update(1L, request, 1L);
 
         assertThat(solution.getCode()).isEqualTo("new");
         assertThat(solution.getTimeElapsed()).isEqualTo(60);
         assertThat(solution.isSolved()).isTrue();
-        assertThat(solution.getProblem()).isEqualTo(newProblem);
+        assertThat(solution.getMemoMarkdown()).isEqualTo("new memo");
+        assertThat(solution.getProblem()).isEqualTo(currentProblem);
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getProblemId()).isEqualTo(7L);
+        assertThat(response.getProblem().getId()).isEqualTo(5L);
     }
 
     @Test
@@ -121,19 +137,18 @@ class SolutionServiceTest {
     void updateSolutionAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
-        Problem problem = problem(5L);
-
         Solution solution = Solution.builder()
                 .code("old")
                 .timeElapsed(30)
                 .isSolved(false)
-                .problem(problem)
+                .memoMarkdown("old memo")
+                .problem(problem(5L))
                 .member(owner)
                 .build();
 
         when(solutionRepository.findById(1L)).thenReturn(Optional.of(solution));
 
-        SolutionRequest request = new SolutionRequest("new", 60, true, 7L);
+        SolutionUpdateRequest request = new SolutionUpdateRequest("new", 60, true, "new memo");
 
         assertThatThrownBy(() -> solutionService.update(1L, request, 2L))
                 .isInstanceOf(AccessDeniedException.class);
@@ -150,6 +165,7 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(30)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(problem)
                 .member(owner)
                 .build();
@@ -172,6 +188,7 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(30)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(problem)
                 .member(owner)
                 .build();
@@ -193,6 +210,7 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(problem)
                 .member(member)
                 .build();
@@ -206,6 +224,7 @@ class SolutionServiceTest {
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).getId()).isEqualTo(99L);
         assertThat(responses.get(0).getMemberId()).isEqualTo(3L);
+        assertThat(responses.get(0).getProblem().getId()).isEqualTo(2L);
     }
 
     @Test
@@ -228,39 +247,43 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(problem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
 
-        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(solutionRepository.findByIdAndMemberId(7L, 1L)).thenReturn(Optional.of(solution));
 
         SolutionResponse response = solutionService.getSolution(7L, 1L);
 
         assertThat(response.getId()).isEqualTo(7L);
         assertThat(response.getMemberId()).isEqualTo(1L);
+        assertThat(response.getProblem().getId()).isEqualTo(2L);
     }
 
     @Test
-    @DisplayName("get solution detail is denied for non-owner")
+    @DisplayName("get solution detail raises not found for non-owner")
     void getSolutionByIdAccessDenied() {
         Member owner = mock(Member.class);
-        when(owner.getId()).thenReturn(1L);
         Problem problem = problem(2L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(problem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
 
-        when(solutionRepository.findById(7L)).thenReturn(Optional.of(solution));
+        when(memberRepository.findById(99L)).thenReturn(Optional.of(owner));
+        when(solutionRepository.findByIdAndMemberId(7L, 99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> solutionService.getSolution(7L, 99L))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
@@ -268,7 +291,7 @@ class SolutionServiceTest {
     void findSolutionNotFound() {
         when(solutionRepository.findById(1L)).thenReturn(Optional.empty());
 
-        SolutionRequest request = new SolutionRequest("code", 10, true, 2L);
+        SolutionUpdateRequest request = new SolutionUpdateRequest("code", 10, true, "memo");
 
         assertThatThrownBy(() -> solutionService.update(1L, request, 1L))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -283,6 +306,7 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
+                .memoMarkdown("memo")
                 .problem(null)
                 .member(member)
                 .build())
@@ -291,20 +315,23 @@ class SolutionServiceTest {
     }
 
     @Test
-    @DisplayName("solution update rejects null problem")
-    void updateSolutionWithNullProblem() {
+    @DisplayName("solution update keeps existing problem relation")
+    void updateSolutionKeepsExistingProblem() {
         Member member = mock(Member.class);
+        Problem problem = problem(1L);
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
-                .problem(problem(1L))
+                .memoMarkdown("memo")
+                .problem(problem)
                 .member(member)
                 .build();
 
-        assertThatThrownBy(() -> solution.update("new code", 20, true, null))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Problem must not be null.");
+        solution.update("new code", 20, true, "updated memo");
+
+        assertThat(solution.getProblem()).isEqualTo(problem);
+        assertThat(solution.getMemoMarkdown()).isEqualTo("updated memo");
     }
 
     private Problem problem(Long id) {
