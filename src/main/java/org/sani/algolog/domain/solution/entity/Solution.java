@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.problem.entity.Problem;
+import org.sani.algolog.global.error.exception.BadRequestException;
 import org.sani.algolog.global.common.BaseEntity;
 
 @Entity
@@ -38,7 +39,7 @@ public class Solution extends BaseEntity {
         this.code = code;
         this.timeElapsed = timeElapsed;
         this.isSolved = isSolved;
-        this.problem = problem;
+        this.problem = validateProblem(problem);
         this.member = member;
     }
 
@@ -46,6 +47,13 @@ public class Solution extends BaseEntity {
         this.code = code;
         this.timeElapsed = timeElapsed;
         this.isSolved = isSolved;
-        this.problem = problem;
+        this.problem = validateProblem(problem);
+    }
+
+    private Problem validateProblem(Problem problem) {
+        if (problem == null) {
+            throw new BadRequestException("Problem must not be null.");
+        }
+        return problem;
     }
 }

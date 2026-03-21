@@ -17,6 +17,7 @@ import org.sani.algolog.domain.solution.dto.SolutionRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.entity.Solution;
 import org.sani.algolog.domain.solution.repository.SolutionRepository;
+import org.sani.algolog.global.error.exception.BadRequestException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -271,6 +272,39 @@ class SolutionServiceTest {
 
         assertThatThrownBy(() -> solutionService.update(1L, request, 1L))
                 .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("solution creation rejects null problem")
+    void createSolutionWithNullProblem() {
+        Member member = mock(Member.class);
+
+        assertThatThrownBy(() -> Solution.builder()
+                .code("code")
+                .timeElapsed(10)
+                .isSolved(true)
+                .problem(null)
+                .member(member)
+                .build())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Problem must not be null.");
+    }
+
+    @Test
+    @DisplayName("solution update rejects null problem")
+    void updateSolutionWithNullProblem() {
+        Member member = mock(Member.class);
+        Solution solution = Solution.builder()
+                .code("code")
+                .timeElapsed(10)
+                .isSolved(true)
+                .problem(problem(1L))
+                .member(member)
+                .build();
+
+        assertThatThrownBy(() -> solution.update("new code", 20, true, null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Problem must not be null.");
     }
 
     private Problem problem(Long id) {
