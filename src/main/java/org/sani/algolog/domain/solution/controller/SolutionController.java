@@ -6,11 +6,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.sani.algolog.domain.solution.dto.SolutionCreateRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
+import org.sani.algolog.domain.solution.dto.SolutionUpdateRequest;
 import org.sani.algolog.domain.solution.service.SolutionService;
 import org.sani.algolog.global.common.ApiResponse;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,5 +55,25 @@ public class SolutionController {
             @RequestHeader(MEMBER_ID_HEADER) Long memberId
     ) {
         return ApiResponse.success(solutionService.getSolution(id, memberId));
+    }
+
+    @Operation(summary = "Update solution", description = "Updates a solution only when owned by the member in X-Member-Id header.")
+    @PutMapping("/{id}")
+    public ApiResponse<SolutionResponse> update(
+            @PathVariable Long id,
+            @RequestHeader(MEMBER_ID_HEADER) Long memberId,
+            @Valid @RequestBody SolutionUpdateRequest request
+    ) {
+        return ApiResponse.success(solutionService.update(id, request, memberId));
+    }
+
+    @Operation(summary = "Delete solution", description = "Deletes a solution only when owned by the member in X-Member-Id header.")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader(MEMBER_ID_HEADER) Long memberId
+    ) {
+        solutionService.delete(id, memberId);
+        return ApiResponse.success();
     }
 }
