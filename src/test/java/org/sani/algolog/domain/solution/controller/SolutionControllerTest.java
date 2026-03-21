@@ -237,6 +237,27 @@ class SolutionControllerTest {
     }
 
     @Test
+    @DisplayName("PUT /api/v1/solutions/{id} validation failure returns INVALID_INPUT")
+    void updateSolutionValidationFailure() throws Exception {
+        String invalidBody = """
+                {
+                  "code": "",
+                  "timeElapsed": -1,
+                  "solved": null,
+                  "memoMarkdown": ""
+                }
+                """;
+
+        mockMvc.perform(put(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    @Test
     @DisplayName("DELETE /api/v1/solutions/{id} returns SUCCESS")
     void deleteSolution() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/100")
@@ -280,6 +301,26 @@ class SolutionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("MISSING_PARAMETER"));
+    }
+
+    @Test
+    @DisplayName("invalid path variable returns TYPE_MISMATCH")
+    void invalidPathVariableType() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/abc")
+                        .header(MEMBER_ID_HEADER, "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("TYPE_MISMATCH"));
+    }
+
+    @Test
+    @DisplayName("invalid X-Member-Id header type returns TYPE_MISMATCH")
+    void invalidMemberIdHeaderType() throws Exception {
+        mockMvc.perform(get(BASE_URL)
+                        .header(MEMBER_ID_HEADER, "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("TYPE_MISMATCH"));
     }
 
     private SolutionResponse solutionResponse(Long id, Long memberId, Long problemId) {
