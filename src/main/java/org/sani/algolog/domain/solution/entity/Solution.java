@@ -26,6 +26,10 @@ public class Solution extends BaseEntity {
 
     private boolean isSolved;
 
+    @Lob
+    @Column(nullable = false)
+    private String memoMarkdown;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
@@ -35,19 +39,27 @@ public class Solution extends BaseEntity {
     private Problem problem;
 
     @Builder
-    public Solution(String code, Integer timeElapsed, boolean isSolved, Problem problem, Member member) {
+    public Solution(
+            String code,
+            Integer timeElapsed,
+            boolean isSolved,
+            String memoMarkdown,
+            Problem problem,
+            Member member
+    ) {
         this.code = code;
         this.timeElapsed = timeElapsed;
         this.isSolved = isSolved;
+        this.memoMarkdown = memoMarkdown;
         this.problem = validateProblem(problem);
         this.member = member;
     }
 
-    public void update(String code, Integer timeElapsed, boolean isSolved, Problem problem) {
+    public void update(String code, Integer timeElapsed, boolean isSolved, String memoMarkdown) {
         this.code = code;
         this.timeElapsed = timeElapsed;
         this.isSolved = isSolved;
-        this.problem = validateProblem(problem);
+        this.memoMarkdown = memoMarkdown;
     }
 
     private Problem validateProblem(Problem problem) {

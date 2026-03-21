@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.sani.algolog.domain.solution.dto.SolutionRequest;
+import org.sani.algolog.domain.solution.dto.SolutionCreateRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.service.SolutionService;
 import org.sani.algolog.global.common.ApiResponse;
@@ -32,7 +32,7 @@ public class SolutionController {
     @PostMapping
     public ApiResponse<SolutionResponse> save(
             @RequestHeader(MEMBER_ID_HEADER) Long memberId,
-            @Valid @RequestBody SolutionRequest request
+            @Valid @RequestBody SolutionCreateRequest request
     ) {
         return ApiResponse.success(solutionService.save(request, memberId));
     }
