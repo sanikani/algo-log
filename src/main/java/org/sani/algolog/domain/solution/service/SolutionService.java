@@ -4,6 +4,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.member.repository.MemberRepository;
+import org.sani.algolog.domain.problem.entity.Problem;
+import org.sani.algolog.domain.problem.repository.ProblemRepository;
 import org.sani.algolog.domain.solution.dto.SolutionRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.entity.Solution;
@@ -21,11 +23,13 @@ public class SolutionService {
 
     private final SolutionRepository solutionRepository;
     private final MemberRepository memberRepository;
+    private final ProblemRepository problemRepository;
 
     @Transactional
     public SolutionResponse save(SolutionRequest request, Long memberId) {
         Member member = findMember(memberId);
-        Solution solution = request.toEntity(member);
+        Problem problem = findProblem(request.getProblemId());
+        Solution solution = request.toEntity(member, problem);
 
         Solution savedSolution = solutionRepository.save(solution);
         return SolutionResponse.from(savedSolution);
@@ -35,12 +39,13 @@ public class SolutionService {
     public SolutionResponse update(Long solutionId, SolutionRequest request, Long memberId) {
         Solution solution = findSolution(solutionId);
         validateOwner(solution, memberId);
+        Problem problem = findProblem(request.getProblemId());
 
         solution.update(
                 request.getCode(),
                 request.getTimeElapsed(),
                 request.getSolved(),
-                request.getProblemId()
+                problem
         );
 
         return SolutionResponse.from(solution);
@@ -74,6 +79,11 @@ public class SolutionService {
     private Member findMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found: " + memberId));
+    }
+
+    private Problem findProblem(Long problemId) {
+        return problemRepository.findById(problemId)
+                .orElseThrow(() -> new EntityNotFoundException("Problem not found: " + problemId));
     }
 
     private void validateOwner(Solution solution, Long memberId) {

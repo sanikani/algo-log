@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.sani.algolog.domain.member.entity.Member;
+import org.sani.algolog.domain.problem.entity.Problem;
 import org.sani.algolog.domain.solution.entity.Solution;
 
 @Getter
@@ -27,12 +28,12 @@ public class SolutionRequest {
     @NotNull
     private Long problemId;
 
-    public Solution toEntity(Member member){
+    public Solution toEntity(Member member, Problem problem){
         return Solution.builder()
                 .code(this.getCode())
                 .timeElapsed(this.getTimeElapsed())
                 .isSolved(this.getSolved())
-                .problemId(this.getProblemId())
+                .problem(problem)
                 .member(member)
                 .build();
     }

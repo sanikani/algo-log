@@ -10,6 +10,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sani.algolog.domain.member.entity.Member;
 import org.sani.algolog.domain.member.repository.MemberRepository;
+import org.sani.algolog.domain.problem.entity.Platform;
+import org.sani.algolog.domain.problem.entity.Problem;
+import org.sani.algolog.domain.problem.repository.ProblemRepository;
 import org.sani.algolog.domain.solution.dto.SolutionRequest;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.entity.Solution;
@@ -36,6 +39,9 @@ class SolutionServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private ProblemRepository problemRepository;
+
     @InjectMocks
     private SolutionService solutionService;
 
@@ -44,6 +50,7 @@ class SolutionServiceTest {
     void saveSolution() {
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
+        Problem problem = problem(10L);
 
         SolutionRequest request = new SolutionRequest("code", 120, true, 10L);
 
@@ -51,12 +58,13 @@ class SolutionServiceTest {
                 .code("code")
                 .timeElapsed(120)
                 .isSolved(true)
-                .problemId(10L)
+                .problem(problem)
                 .member(member)
                 .build();
         ReflectionTestUtils.setField(savedSolution, "id", 100L);
 
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        when(problemRepository.findById(10L)).thenReturn(Optional.of(problem));
         when(solutionRepository.save(any(Solution.class))).thenReturn(savedSolution);
 
         SolutionResponse response = solutionService.save(request, 1L);
@@ -67,7 +75,7 @@ class SolutionServiceTest {
         assertThat(captured.getCode()).isEqualTo(request.getCode());
         assertThat(captured.getTimeElapsed()).isEqualTo(request.getTimeElapsed());
         assertThat(captured.isSolved()).isEqualTo(request.getSolved());
-        assertThat(captured.getProblemId()).isEqualTo(request.getProblemId());
+        assertThat(captured.getProblem()).isEqualTo(problem);
         assertThat(captured.getMember()).isEqualTo(member);
 
         assertThat(response.getId()).isEqualTo(100L);
@@ -81,17 +89,20 @@ class SolutionServiceTest {
     void updateSolution() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem currentProblem = problem(5L);
+        Problem newProblem = problem(7L);
 
         Solution solution = Solution.builder()
                 .code("old")
                 .timeElapsed(30)
                 .isSolved(false)
-                .problemId(5L)
+                .problem(currentProblem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 1L);
 
         when(solutionRepository.findById(1L)).thenReturn(Optional.of(solution));
+        when(problemRepository.findById(7L)).thenReturn(Optional.of(newProblem));
 
         SolutionRequest request = new SolutionRequest("new", 60, true, 7L);
         SolutionResponse response = solutionService.update(1L, request, 1L);
@@ -99,7 +110,7 @@ class SolutionServiceTest {
         assertThat(solution.getCode()).isEqualTo("new");
         assertThat(solution.getTimeElapsed()).isEqualTo(60);
         assertThat(solution.isSolved()).isTrue();
-        assertThat(solution.getProblemId()).isEqualTo(7L);
+        assertThat(solution.getProblem()).isEqualTo(newProblem);
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getProblemId()).isEqualTo(7L);
     }
@@ -109,12 +120,13 @@ class SolutionServiceTest {
     void updateSolutionAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem problem = problem(5L);
 
         Solution solution = Solution.builder()
                 .code("old")
                 .timeElapsed(30)
                 .isSolved(false)
-                .problemId(5L)
+                .problem(problem)
                 .member(owner)
                 .build();
 
@@ -131,12 +143,13 @@ class SolutionServiceTest {
     void deleteSolution() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem problem = problem(5L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(30)
                 .isSolved(true)
-                .problemId(5L)
+                .problem(problem)
                 .member(owner)
                 .build();
 
@@ -152,12 +165,13 @@ class SolutionServiceTest {
     void deleteSolutionAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem problem = problem(5L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(30)
                 .isSolved(true)
-                .problemId(5L)
+                .problem(problem)
                 .member(owner)
                 .build();
 
@@ -172,12 +186,13 @@ class SolutionServiceTest {
     void getSolutionsByMember() {
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(3L);
+        Problem problem = problem(2L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
-                .problemId(2L)
+                .problem(problem)
                 .member(member)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 99L);
@@ -206,12 +221,13 @@ class SolutionServiceTest {
     void getSolutionById() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem problem = problem(2L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
-                .problemId(2L)
+                .problem(problem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
@@ -229,12 +245,13 @@ class SolutionServiceTest {
     void getSolutionByIdAccessDenied() {
         Member owner = mock(Member.class);
         when(owner.getId()).thenReturn(1L);
+        Problem problem = problem(2L);
 
         Solution solution = Solution.builder()
                 .code("code")
                 .timeElapsed(10)
                 .isSolved(true)
-                .problemId(2L)
+                .problem(problem)
                 .member(owner)
                 .build();
         ReflectionTestUtils.setField(solution, "id", 7L);
@@ -254,5 +271,17 @@ class SolutionServiceTest {
 
         assertThatThrownBy(() -> solutionService.update(1L, request, 1L))
                 .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    private Problem problem(Long id) {
+        Problem problem = Problem.builder()
+                .platform(Platform.BOJ)
+                .externalProblemId(String.valueOf(id))
+                .title("problem-" + id)
+                .problemUrl("https://example.com/problems/" + id)
+                .difficulty("Bronze")
+                .build();
+        ReflectionTestUtils.setField(problem, "id", id);
+        return problem;
     }
 }
