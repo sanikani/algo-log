@@ -22,9 +22,12 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -153,6 +156,117 @@ class SolutionControllerTest {
                 .thenThrow(new EntityNotFoundException("Solution not found: 100"));
 
         mockMvc.perform(get(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/solutions/{id} returns updated solution")
+    void updateSolution() throws Exception {
+        SolutionResponse response = solutionResponse(100L, 1L, 10L);
+        when(solutionService.update(eq(100L), any(), eq(1L))).thenReturn(response);
+
+        String body = """
+                {
+                  "code": "public class Main { public static void main(String[] args) {} }",
+                  "timeElapsed": 111,
+                  "solved": true,
+                  "memoMarkdown": "수정된 회고"
+                }
+                """;
+
+        mockMvc.perform(put(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(100))
+                .andExpect(jsonPath("$.data.problem.id").value(10));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/solutions/{id} forbidden returns FORBIDDEN")
+    void updateSolutionForbidden() throws Exception {
+        when(solutionService.update(eq(100L), any(), eq(1L)))
+                .thenThrow(new AccessDeniedException("작성자만 수정/삭제할 수 있습니다."));
+
+        String body = """
+                {
+                  "code": "public class Main {}",
+                  "timeElapsed": 120,
+                  "solved": true,
+                  "memoMarkdown": "회고"
+                }
+                """;
+
+        mockMvc.perform(put(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/solutions/{id} missing returns NOT_FOUND")
+    void updateSolutionNotFound() throws Exception {
+        when(solutionService.update(eq(100L), any(), eq(1L)))
+                .thenThrow(new EntityNotFoundException("Solution not found: 100"));
+
+        String body = """
+                {
+                  "code": "public class Main {}",
+                  "timeElapsed": 120,
+                  "solved": true,
+                  "memoMarkdown": "회고"
+                }
+                """;
+
+        mockMvc.perform(put(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/solutions/{id} returns SUCCESS")
+    void deleteSolution() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/solutions/{id} forbidden returns FORBIDDEN")
+    void deleteSolutionForbidden() throws Exception {
+        doThrow(new AccessDeniedException("작성자만 수정/삭제할 수 있습니다."))
+                .when(solutionService).delete(100L, 1L);
+
+        mockMvc.perform(delete(BASE_URL + "/100")
+                        .header(MEMBER_ID_HEADER, "1"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/solutions/{id} missing returns NOT_FOUND")
+    void deleteSolutionNotFound() throws Exception {
+        doThrow(new EntityNotFoundException("Solution not found: 100"))
+                .when(solutionService).delete(100L, 1L);
+
+        mockMvc.perform(delete(BASE_URL + "/100")
                         .header(MEMBER_ID_HEADER, "1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
