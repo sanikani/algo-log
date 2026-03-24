@@ -32,9 +32,6 @@ public record GithubOAuthUserInfo(
     }
 
     public String nicknameCandidate() {
-        if (name != null && !name.isBlank()) {
-            return name;
-        }
         return login;
     }
 

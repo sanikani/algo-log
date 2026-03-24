@@ -71,48 +71,71 @@ class OAuthMemberServiceTest {
         GithubOAuthUserInfo userInfo = new GithubOAuthUserInfo(123L, "octocat", "The Octocat");
         Member savedMember = Member.builder()
                 .email(userInfo.canonicalEmail())
-                .nickname("The-Octocat1")
+                .nickname("octocat1")
                 .provider(Provider.GITHUB)
                 .role(Role.USER)
                 .build();
 
         when(memberRepository.findByEmail(userInfo.canonicalEmail())).thenReturn(Optional.empty());
-        when(memberRepository.findByNickname("The-Octocat")).thenReturn(Optional.of(savedMember));
-        when(memberRepository.findByNickname("The-Octocat1")).thenReturn(Optional.empty());
+        when(memberRepository.findByNickname("octocat")).thenReturn(Optional.of(savedMember));
+        when(memberRepository.findByNickname("octocat1")).thenReturn(Optional.empty());
         when(memberRepository.save(any(Member.class))).thenReturn(savedMember);
 
         Member result = oauthMemberService.getOrCreateGithubMember(userInfo);
 
         assertThat(result.getEmail()).isEqualTo(userInfo.canonicalEmail());
-        assertThat(result.getNickname()).isEqualTo("The-Octocat1");
+        assertThat(result.getNickname()).isEqualTo("octocat1");
         assertThat(result.getProvider()).isEqualTo(Provider.GITHUB);
         assertThat(result.getRole()).isEqualTo(Role.USER);
     }
 
     @Test
-    @DisplayName("short nickname falls back to github id based nickname")
-    void fallbackNickname() {
+    @DisplayName("single character login is used as nickname")
+    void useSingleCharacterLoginAsNickname() {
         GithubOAuthUserInfo userInfo = new GithubOAuthUserInfo(7L, "x", null);
         Member savedMember = Member.builder()
                 .email(userInfo.canonicalEmail())
-                .nickname("gh7")
+                .nickname("x")
                 .provider(Provider.GITHUB)
                 .role(Role.USER)
                 .build();
 
         when(memberRepository.findByEmail(userInfo.canonicalEmail())).thenReturn(Optional.empty());
-        when(memberRepository.findByNickname("gh7")).thenReturn(Optional.empty());
+        when(memberRepository.findByNickname("x")).thenReturn(Optional.empty());
         when(memberRepository.save(any(Member.class))).thenReturn(savedMember);
 
         Member result = oauthMemberService.getOrCreateGithubMember(userInfo);
 
-        assertThat(result.getNickname()).isEqualTo("gh7");
+        assertThat(result.getNickname()).isEqualTo("x");
     }
 
     @Test
     @DisplayName("long nickname is truncated to 20 characters before uniqueness check")
     void truncateLongNicknameBeforeCheckingUniqueness() {
         GithubOAuthUserInfo userInfo = new GithubOAuthUserInfo(123L, "octocat", "abcdefghijklmnopqrstuv");
+        Member savedMember = Member.builder()
+                .email(userInfo.canonicalEmail())
+                .nickname("octocat")
+                .provider(Provider.GITHUB)
+                .role(Role.USER)
+                .build();
+
+        when(memberRepository.findByEmail(userInfo.canonicalEmail())).thenReturn(Optional.empty());
+        when(memberRepository.findByNickname("octocat")).thenReturn(Optional.empty());
+        when(memberRepository.save(any(Member.class))).thenReturn(savedMember);
+
+        Member result = oauthMemberService.getOrCreateGithubMember(userInfo);
+
+        assertThat(result.getEmail()).isEqualTo(userInfo.canonicalEmail());
+        assertThat(result.getNickname()).isEqualTo("octocat");
+        assertThat(result.getProvider()).isEqualTo(Provider.GITHUB);
+        assertThat(result.getRole()).isEqualTo(Role.USER);
+    }
+
+    @Test
+    @DisplayName("long github login is truncated to 20 characters before uniqueness check")
+    void truncateLongLoginBeforeCheckingUniqueness() {
+        GithubOAuthUserInfo userInfo = new GithubOAuthUserInfo(123L, "abcdefghijklmnopqrstuv", "The Octocat");
         Member savedMember = Member.builder()
                 .email(userInfo.canonicalEmail())
                 .nickname("abcdefghijklmnopqrst")
