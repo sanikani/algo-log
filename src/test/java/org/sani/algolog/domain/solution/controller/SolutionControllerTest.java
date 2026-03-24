@@ -7,8 +7,11 @@ import org.sani.algolog.domain.problem.dto.ProblemResponse;
 import org.sani.algolog.domain.problem.entity.Platform;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.service.SolutionService;
+import org.sani.algolog.global.error.exception.UnauthorizedException;
+import org.sani.algolog.security.oauth.AlgoLogAuthenticatedPrincipal;
 import org.sani.algolog.global.config.WebConfig;
 import org.sani.algolog.global.error.GlobalExceptionHandler;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,7 +42,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SolutionControllerTest {
 
     private static final String BASE_URL = "/api/v1/solutions";
-    private static final String MEMBER_ID_HEADER = "X-Member-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -69,7 +72,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(post(BASE_URL)
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -98,7 +101,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(post(BASE_URL)
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidBody))
                 .andExpect(status().isBadRequest())
@@ -114,7 +117,7 @@ class SolutionControllerTest {
         when(solutionService.getSolutionsByMember(1L)).thenReturn(List.of(first, second));
 
         mockMvc.perform(get(BASE_URL)
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -129,7 +132,7 @@ class SolutionControllerTest {
         when(solutionService.getSolution(100L, 1L)).thenReturn(solutionResponse(100L, 1L, 10L));
 
         mockMvc.perform(get(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -144,7 +147,7 @@ class SolutionControllerTest {
                 .thenThrow(new AccessDeniedException("Access is denied."));
 
         mockMvc.perform(get(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
@@ -157,7 +160,7 @@ class SolutionControllerTest {
                 .thenThrow(new EntityNotFoundException("Solution not found: 100"));
 
         mockMvc.perform(get(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"));
@@ -179,7 +182,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(put(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -205,7 +208,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(put(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isForbidden())
@@ -229,7 +232,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(put(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound())
@@ -250,7 +253,7 @@ class SolutionControllerTest {
                 """;
 
         mockMvc.perform(put(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1")
+                        .with(authentication(authenticatedMember(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidBody))
                 .andExpect(status().isBadRequest())
@@ -262,7 +265,7 @@ class SolutionControllerTest {
     @DisplayName("DELETE /api/v1/solutions/{id} returns SUCCESS")
     void deleteSolution() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -276,7 +279,7 @@ class SolutionControllerTest {
                 .when(solutionService).delete(100L, 1L);
 
         mockMvc.perform(delete(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
@@ -289,39 +292,42 @@ class SolutionControllerTest {
                 .when(solutionService).delete(100L, 1L);
 
         mockMvc.perform(delete(BASE_URL + "/100")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }
 
     @Test
-    @DisplayName("missing X-Member-Id header returns MISSING_PARAMETER")
-    void missingMemberIdHeader() throws Exception {
+    @DisplayName("missing authentication returns UNAUTHORIZED")
+    void missingAuthentication() throws Exception {
         mockMvc.perform(get(BASE_URL))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.code").value("MISSING_PARAMETER"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
     @DisplayName("invalid path variable returns TYPE_MISMATCH")
     void invalidPathVariableType() throws Exception {
         mockMvc.perform(get(BASE_URL + "/abc")
-                        .header(MEMBER_ID_HEADER, "1"))
+                        .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("TYPE_MISMATCH"));
     }
 
     @Test
-    @DisplayName("invalid X-Member-Id header type returns TYPE_MISMATCH")
-    void invalidMemberIdHeaderType() throws Exception {
+    @DisplayName("invalid authenticated principal returns UNAUTHORIZED")
+    void invalidAuthenticatedPrincipal() throws Exception {
+        TestingAuthenticationToken authentication = new TestingAuthenticationToken("anonymous", null);
+        authentication.setAuthenticated(true);
+
         mockMvc.perform(get(BASE_URL)
-                        .header(MEMBER_ID_HEADER, "abc"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.code").value("TYPE_MISMATCH"));
+                        .with(authentication(authentication)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     private SolutionResponse solutionResponse(Long id, Long memberId, Long problemId) {
@@ -344,5 +350,18 @@ class SolutionControllerTest {
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
+    }
+
+    private TestingAuthenticationToken authenticatedMember(Long memberId) {
+        TestingAuthenticationToken authentication = new TestingAuthenticationToken(new TestPrincipal(memberId), null);
+        authentication.setAuthenticated(true);
+        return authentication;
+    }
+
+    private record TestPrincipal(Long memberId) implements AlgoLogAuthenticatedPrincipal {
+        @Override
+        public Long getMemberId() {
+            return memberId;
+        }
     }
 }
