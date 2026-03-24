@@ -93,9 +93,17 @@
 
 ### 현재 인증 처리 방식
 
-- 현재 MVP API는 임시로 `X-Member-Id` 헤더를 사용해 사용자를 식별합니다.
-- 컨트롤러는 헤더를 직접 받지 않고 `@CurrentMemberId`를 통해 현재 사용자 ID를 주입받습니다.
-- 이후 JWT 또는 OAuth Principal 기반 인증을 도입할 때는 컨트롤러 시그니처를 바꾸지 않고 argument resolver 구현만 교체하는 것을 목표로 합니다.
+- 현재 MVP API는 GitHub OAuth 2.0 로그인 후 세션 기반으로 사용자를 식별합니다.
+- 컨트롤러는 인증 구현 상세를 직접 다루지 않고 `@CurrentMemberId`를 통해 현재 사용자 ID를 주입받습니다.
+- 이후 JWT 기반 인증으로 전환하더라도 컨트롤러 시그니처를 바꾸지 않고 argument resolver 또는 인증 계층만 교체하는 것을 목표로 합니다.
+
+### GitHub OAuth 로컬 설정
+
+- 환경 변수
+  - `GITHUB_CLIENT_ID`
+  - `GITHUB_CLIENT_SECRET`
+- 필요 scope: `read:user`, `user:email`
+- 로그인 진입 경로: `/oauth2/authorization/github`
 
 ---
 

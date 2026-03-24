@@ -31,7 +31,7 @@ public class SolutionController {
 
     @Operation(
             summary = "Save solution",
-            description = "Saves a solution for the current member resolved from the temporary X-Member-Id header."
+            description = "Saves a solution for the currently authenticated member."
     )
     @PostMapping
     public ApiResponse<SolutionResponse> save(
@@ -43,7 +43,7 @@ public class SolutionController {
 
     @Operation(
             summary = "Get my solutions",
-            description = "Returns all solutions owned by the current member resolved from the temporary X-Member-Id header."
+            description = "Returns all solutions owned by the currently authenticated member."
     )
     @GetMapping
     public ApiResponse<List<SolutionResponse>> getSolutions(
@@ -63,7 +63,7 @@ public class SolutionController {
 
     @Operation(
             summary = "Update solution",
-            description = "Updates a solution only when owned by the current member resolved from the temporary X-Member-Id header."
+            description = "Updates a solution only when owned by the currently authenticated member."
     )
     @PutMapping("/{id}")
     public ApiResponse<SolutionResponse> update(
@@ -76,7 +76,7 @@ public class SolutionController {
 
     @Operation(
             summary = "Delete solution",
-            description = "Deletes a solution only when owned by the current member resolved from the temporary X-Member-Id header."
+            description = "Deletes a solution only when owned by the currently authenticated member."
     )
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(
