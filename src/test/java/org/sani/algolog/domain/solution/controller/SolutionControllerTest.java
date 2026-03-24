@@ -7,10 +7,9 @@ import org.sani.algolog.domain.problem.dto.ProblemResponse;
 import org.sani.algolog.domain.problem.entity.Platform;
 import org.sani.algolog.domain.solution.dto.SolutionResponse;
 import org.sani.algolog.domain.solution.service.SolutionService;
-import org.sani.algolog.global.error.exception.UnauthorizedException;
-import org.sani.algolog.security.oauth.AlgoLogAuthenticatedPrincipal;
 import org.sani.algolog.global.config.WebConfig;
 import org.sani.algolog.global.error.GlobalExceptionHandler;
+import org.sani.algolog.security.oauth.AlgoLogAuthenticatedPrincipal;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -304,7 +303,8 @@ class SolutionControllerTest {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("인증된 사용자 정보가 없습니다."));
     }
 
     @Test

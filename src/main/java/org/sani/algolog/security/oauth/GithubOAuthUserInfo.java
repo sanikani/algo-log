@@ -23,7 +23,7 @@ public record GithubOAuthUserInfo(
             throw invalidUserInfo("GitHub login is missing.");
         }
 
-        String normalizedName = nameValue instanceof String stringName ? stringName : null;
+        String normalizedName = nameValue instanceof String stringName ? stringName.trim() : null;
         return new GithubOAuthUserInfo(idNumber.longValue(), login.trim(), normalizedName);
     }
 
@@ -33,7 +33,7 @@ public record GithubOAuthUserInfo(
 
     public String nicknameCandidate() {
         if (name != null && !name.isBlank()) {
-            return name.trim();
+            return name;
         }
         return login;
     }

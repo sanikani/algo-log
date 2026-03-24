@@ -6,6 +6,7 @@ import org.sani.algolog.domain.member.entity.Provider;
 import org.sani.algolog.domain.member.entity.Role;
 import org.sani.algolog.domain.member.repository.MemberRepository;
 import org.sani.algolog.global.error.exception.ConflictException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OAuthMemberService {
 
     private static final int MAX_NICKNAME_LENGTH = 20;
+    private static final int MAX_NICKNAME_RETRY_COUNT = 5;
 
     private final MemberRepository memberRepository;
 
@@ -33,29 +35,48 @@ public class OAuthMemberService {
     }
 
     private Member createGithubMember(GithubOAuthUserInfo userInfo) {
-        String nickname = generateUniqueNickname(userInfo.nicknameCandidate(), userInfo.githubId());
-        Member member = Member.builder()
+        String baseNickname = normalizeNickname(userInfo.nicknameCandidate(), userInfo.githubId());
+        DataIntegrityViolationException lastException = null;
+
+        for (int attempt = 0; attempt < MAX_NICKNAME_RETRY_COUNT; attempt++) {
+            String nickname = generateNicknameCandidate(baseNickname, attempt);
+            if (memberRepository.findByNickname(nickname).isPresent()) {
+                continue;
+            }
+
+            try {
+                return memberRepository.save(buildGithubMember(userInfo, nickname));
+            } catch (DataIntegrityViolationException exception) {
+                Member existingMember = memberRepository.findByEmail(userInfo.canonicalEmail())
+                        .map(this::validateGithubMember)
+                        .orElse(null);
+                if (existingMember != null) {
+                    return existingMember;
+                }
+                lastException = exception;
+            }
+        }
+
+        throw newConflict("GitHub 닉네임을 생성하는 중 충돌이 반복되었습니다.", lastException);
+    }
+
+    private Member buildGithubMember(GithubOAuthUserInfo userInfo, String nickname) {
+        return Member.builder()
                 .email(userInfo.canonicalEmail())
                 .nickname(nickname)
                 .provider(Provider.GITHUB)
                 .role(Role.USER)
                 .build();
-
-        return memberRepository.save(member);
     }
 
-    private String generateUniqueNickname(String rawNickname, Long githubId) {
-        String baseNickname = normalizeNickname(rawNickname, githubId);
-        String candidate = truncate(baseNickname, MAX_NICKNAME_LENGTH);
-        int suffix = 1;
-
-        while (memberRepository.findByNickname(candidate).isPresent()) {
-            String suffixText = String.valueOf(suffix++);
-            String truncatedBase = truncate(baseNickname, MAX_NICKNAME_LENGTH - suffixText.length());
-            candidate = truncatedBase + suffixText;
+    private String generateNicknameCandidate(String baseNickname, int attempt) {
+        if (attempt == 0) {
+            return truncate(baseNickname, MAX_NICKNAME_LENGTH);
         }
 
-        return candidate;
+        String suffixText = String.valueOf(attempt);
+        String truncatedBase = truncate(baseNickname, MAX_NICKNAME_LENGTH - suffixText.length());
+        return truncatedBase + suffixText;
     }
 
     private String normalizeNickname(String rawNickname, Long githubId) {
@@ -71,5 +92,11 @@ public class OAuthMemberService {
             return value;
         }
         return value.substring(0, maxLength);
+    }
+
+    private ConflictException newConflict(String message, Throwable cause) {
+        ConflictException exception = new ConflictException(message);
+        exception.initCause(cause);
+        return exception;
     }
 }
