@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.sani.algolog.query.mapper.HeatmapQueryMapper">
+
+    <select id="findDailyCountsByMemberIdAndDateRange"
+            resultType="org.sani.algolog.query.dto.HeatmapDailyCountRow">
+        SELECT
+            CAST(s.created_at AS DATE) AS solvedDate,
+            COUNT(*) AS solvedCount
+        FROM solution s
+        WHERE s.member_id = #{memberId}
+          AND s.is_solved = true
+          AND s.created_at >= #{startDateTime}
+          AND s.created_at &lt; #{endExclusiveDateTime}
+        GROUP BY CAST(s.created_at AS DATE)
+        ORDER BY solvedDate ASC
+    </select>
+</mapper>

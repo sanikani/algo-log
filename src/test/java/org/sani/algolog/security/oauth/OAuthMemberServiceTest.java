@@ -90,23 +90,23 @@ class OAuthMemberServiceTest {
     }
 
     @Test
-    @DisplayName("single character login is used as nickname")
+    @DisplayName("single character login falls back to github id based nickname")
     void useSingleCharacterLoginAsNickname() {
         GithubOAuthUserInfo userInfo = new GithubOAuthUserInfo(7L, "x", null);
         Member savedMember = Member.builder()
                 .email(userInfo.canonicalEmail())
-                .nickname("x")
+                .nickname("gh7")
                 .provider(Provider.GITHUB)
                 .role(Role.USER)
                 .build();
 
         when(memberRepository.findByEmail(userInfo.canonicalEmail())).thenReturn(Optional.empty());
-        when(memberRepository.findByNickname("x")).thenReturn(Optional.empty());
+        when(memberRepository.findByNickname("gh7")).thenReturn(Optional.empty());
         when(memberRepository.save(any(Member.class))).thenReturn(savedMember);
 
         Member result = oauthMemberService.getOrCreateGithubMember(userInfo);
 
-        assertThat(result.getNickname()).isEqualTo("x");
+        assertThat(result.getNickname()).isEqualTo("gh7");
     }
 
     @Test
