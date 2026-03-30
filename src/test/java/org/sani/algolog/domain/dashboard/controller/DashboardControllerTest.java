@@ -3,6 +3,8 @@ package org.sani.algolog.domain.dashboard.controller;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.sani.algolog.domain.dashboard.dto.DashboardCountResponse;
+import org.sani.algolog.domain.dashboard.dto.DashboardSummaryResponse;
 import org.sani.algolog.domain.dashboard.dto.HeatmapDayResponse;
 import org.sani.algolog.domain.dashboard.service.DashboardQueryService;
 import org.sani.algolog.global.config.WebConfig;
@@ -57,12 +59,58 @@ class DashboardControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/dashboard/summary returns dashboard summary data")
+    void getSummary() throws Exception {
+        when(dashboardQueryService.getSummary(1L)).thenReturn(new DashboardSummaryResponse(
+                5,
+                3,
+                2,
+                List.of(
+                        new DashboardCountResponse("BOJ", 3),
+                        new DashboardCountResponse("PROGRAMMERS", 2)
+                ),
+                List.of(
+                        new DashboardCountResponse("Gold 4", 2),
+                        new DashboardCountResponse("Silver 1", 1)
+                )
+        ));
+
+        mockMvc.perform(get("/api/v1/dashboard/summary")
+                        .with(authentication(authenticatedMember(1L))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.totalCount").value(5))
+                .andExpect(jsonPath("$.data.solvedCount").value(3))
+                .andExpect(jsonPath("$.data.failedCount").value(2))
+                .andExpect(jsonPath("$.data.platformCounts.length()").value(2))
+                .andExpect(jsonPath("$.data.platformCounts[0].name").value("BOJ"))
+                .andExpect(jsonPath("$.data.platformCounts[0].count").value(3))
+                .andExpect(jsonPath("$.data.difficultyCounts.length()").value(2))
+                .andExpect(jsonPath("$.data.difficultyCounts[0].name").value("Gold 4"))
+                .andExpect(jsonPath("$.data.difficultyCounts[0].count").value(2));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/dashboard/heatmap returns NOT_FOUND when member is missing")
     void getHeatmapMemberNotFound() throws Exception {
         when(dashboardQueryService.getHeatmap(1L))
                 .thenThrow(new EntityNotFoundException("Member not found: 1"));
 
         mockMvc.perform(get("/api/v1/dashboard/heatmap")
+                        .with(authentication(authenticatedMember(1L))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/dashboard/summary returns NOT_FOUND when member is missing")
+    void getSummaryMemberNotFound() throws Exception {
+        when(dashboardQueryService.getSummary(1L))
+                .thenThrow(new EntityNotFoundException("Member not found: 1"));
+
+        mockMvc.perform(get("/api/v1/dashboard/summary")
                         .with(authentication(authenticatedMember(1L))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
