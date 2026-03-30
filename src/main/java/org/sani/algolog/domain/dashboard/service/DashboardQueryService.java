@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -17,6 +18,7 @@ import java.util.List;
 public class DashboardQueryService {
 
     private static final int HEATMAP_LOOKBACK_DAYS = 365;
+    private static final ZoneId HEATMAP_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final HeatmapQueryMapper heatmapQueryMapper;
     private final MemberRepository memberRepository;
@@ -24,10 +26,14 @@ public class DashboardQueryService {
     public List<HeatmapDayResponse> getHeatmap(Long memberId) {
         validateMember(memberId);
 
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now(HEATMAP_ZONE_ID);
         LocalDate startDate = endDate.minusDays(HEATMAP_LOOKBACK_DAYS - 1L);
 
-        return heatmapQueryMapper.findDailyCountsByMemberIdAndDateRange(memberId, startDate, endDate)
+        return heatmapQueryMapper.findDailyCountsByMemberIdAndDateRange(
+                        memberId,
+                        startDate.atStartOfDay(),
+                        endDate.atStartOfDay().plusDays(1)
+                )
                 .stream()
                 .map(HeatmapDayResponse::from)
                 .toList();

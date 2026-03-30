@@ -55,12 +55,14 @@ class HeatmapQueryMapperTest {
         saveSolution(owner, problem, LocalDateTime.of(2026, 3, 20, 10, 0));
         saveSolution(owner, problem, LocalDateTime.of(2026, 3, 20, 18, 0));
         saveSolution(owner, problem, LocalDateTime.of(2026, 3, 21, 9, 0));
+        saveSolution(owner, problem, false, LocalDateTime.of(2026, 3, 21, 10, 0));
         saveSolution(other, problem, LocalDateTime.of(2026, 3, 20, 12, 0));
+        saveSolution(owner, problem, LocalDateTime.of(2026, 3, 22, 0, 0));
 
         List<HeatmapDailyCountRow> rows = heatmapQueryMapper.findDailyCountsByMemberIdAndDateRange(
                 owner.getId(),
-                LocalDate.of(2026, 3, 19),
-                LocalDate.of(2026, 3, 21)
+                LocalDateTime.of(2026, 3, 19, 0, 0),
+                LocalDateTime.of(2026, 3, 22, 0, 0)
         );
 
         assertThat(rows).hasSize(2);
@@ -77,18 +79,22 @@ class HeatmapQueryMapperTest {
 
         List<HeatmapDailyCountRow> rows = heatmapQueryMapper.findDailyCountsByMemberIdAndDateRange(
                 owner.getId(),
-                LocalDate.of(2026, 1, 1),
-                LocalDate.of(2026, 1, 31)
+                LocalDateTime.of(2026, 1, 1, 0, 0),
+                LocalDateTime.of(2026, 2, 1, 0, 0)
         );
 
         assertThat(rows).isEmpty();
     }
 
     private void saveSolution(Member member, Problem problem, LocalDateTime createdAt) {
+        saveSolution(member, problem, true, createdAt);
+    }
+
+    private void saveSolution(Member member, Problem problem, boolean isSolved, LocalDateTime createdAt) {
         Solution solution = solutionRepository.save(Solution.builder()
                 .code("public class Main {}")
                 .timeElapsed(100)
-                .isSolved(true)
+                .isSolved(isSolved)
                 .memoMarkdown("memo")
                 .problem(problem)
                 .member(member)

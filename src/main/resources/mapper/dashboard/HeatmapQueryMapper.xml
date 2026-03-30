@@ -11,7 +11,9 @@
             COUNT(*) AS solvedCount
         FROM solution s
         WHERE s.member_id = #{memberId}
-          AND CAST(s.created_at AS DATE) BETWEEN #{startDate} AND #{endDate}
+          AND s.is_solved = true
+          AND s.created_at >= #{startDateTime}
+          AND s.created_at &lt; #{endExclusiveDateTime}
         GROUP BY CAST(s.created_at AS DATE)
         ORDER BY solvedDate ASC
     </select>
