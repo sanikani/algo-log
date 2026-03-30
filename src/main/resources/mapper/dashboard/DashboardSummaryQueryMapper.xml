@@ -17,7 +17,7 @@
     <select id="findPlatformCountsByMemberId"
             resultType="org.sani.algolog.query.dto.SummaryCountRow">
         SELECT
-            CAST(p.platform AS VARCHAR) AS name,
+            p.platform AS name,
             COUNT(*) AS count
         FROM solution s
         INNER JOIN problems p ON p.id = s.problem_id
