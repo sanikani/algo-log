@@ -29,4 +29,14 @@ class DashboardControllerSecurityIT {
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
     }
+
+    @Test
+    @DisplayName("missing authentication is handled by security entry point for dashboard summary")
+    void missingAuthenticationForSummary() throws Exception {
+        mockMvc.perform(get("/api/v1/dashboard/summary"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
+    }
 }
