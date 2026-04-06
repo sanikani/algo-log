@@ -104,6 +104,10 @@
   - `GITHUB_CLIENT_SECRET`
 - 필요 scope: `read:user`, `user:email`
 - 로그인 진입 경로: `/oauth2/authorization/github`
+- 프론트 개발 서버 연동
+  - `algolog.frontend.app-url`: OAuth 성공/로그아웃 후 복귀할 프론트 URL
+  - `algolog.frontend.allowed-origin`: credential 기반 API 호출을 허용할 프론트 origin
+  - 기본값은 둘 다 `http://localhost:5173`
 
 ---
 
